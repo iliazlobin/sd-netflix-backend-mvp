@@ -435,10 +435,10 @@ TITLE_CAST = [
 QUALITIES = ["1080p", "720p", "480p", "240p"]
 SEGMENTS_PER_TITLE = 5
 MOCK_FILE_PATHS = {
-    "1080p": "/app/data/segments/mock_1080p.ts",
-    "720p": "/app/data/segments/mock_720p.ts",
-    "480p": "/app/data/segments/mock_480p.ts",
-    "240p": "/app/data/segments/mock_240p.ts",
+    "1080p": "mock_1080p.ts",
+    "720p": "mock_720p.ts",
+    "480p": "mock_480p.ts",
+    "240p": "mock_240p.ts",
 }
 SEGMENT_SIZE_BYTES = {
     "1080p": 4096,
