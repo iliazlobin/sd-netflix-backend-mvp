@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+verify/.venv/
+
+# Testing
+.pytest_cache/
+coverage/
+htmlcov/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env
+.env
+
+# Runtime
+*.rdb
+dump.rdb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+verify/logs/
+verify/state/
+.venv*/
+env/
+.ruff_cache/
+.mypy_cache/
+*.log
+.finalize.lock/
+.noship
