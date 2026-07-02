@@ -1,5 +1,6 @@
 # Netflix MVP — Functional tests
-# Builds the full compose stack, runs migrations, and executes acceptance tests.
+# Uses GitHub Actions Postgres service, runs migrations, starts uvicorn,
+# and executes acceptance tests. No Docker Compose needed in CI.
 # Runs on every push to main.
 
 name: functional
@@ -10,37 +11,77 @@ on:
 
 env:
   APP_PORT: 8050
+  PYTHON_VERSION: "3.12"
+  DATABASE_URL: postgresql+asyncpg://netflix:netflix@localhost:5432/netflix
+  POSTGRES_USER: netflix
+  POSTGRES_PASSWORD: netflix
+  POSTGRES_DB: netflix
 
 jobs:
   acceptance:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: netflix
+          POSTGRES_PASSWORD: netflix
+          POSTGRES_DB: netflix
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready -U netflix
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Build and start stack
+      - name: Install project with dev extras
+        run: uv sync --extra dev
+
+      - name: Copy env
+        run: cp .env.example .env
+
+      - name: Run migrations (including seed data)
+        run: uv run alembic upgrade head
+
+      - name: Start app in background
         run: |
-          cp .env.example .env
-          APP_PORT=$APP_PORT docker compose up -d --build
+          nohup env PYTHONPATH=src uv run uvicorn netflix.main:app \
+            --host 0.0.0.0 --port 8000 \
+            --log-level info > /tmp/uvicorn.log 2>&1 &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID"
 
-      - name: Wait for health
+      - name: Wait for app health
         run: |
           for i in $(seq 1 30); do
-            curl -sf http://localhost:$APP_PORT/healthz && break
+            if curl -sf http://localhost:8000/healthz > /dev/null 2>&1; then
+              echo "App is healthy after $((i * 2)) seconds"
+              exit 0
+            fi
             echo "Attempt $i/30 — waiting..."
             sleep 2
           done
+          echo "App failed to become healthy after 60 seconds"
+          cat /tmp/uvicorn.log
+          exit 1
 
       - name: Run acceptance tests
-        run: API_BASE_URL=http://localhost:$APP_PORT uv run --with httpx --with pytest python -m pytest verify/acceptance -q -v
+        run: API_BASE_URL=http://localhost:8000 uv run pytest verify/acceptance -q -v
 
       - name: Collect logs on failure
         if: failure()
-        run: docker compose logs app --tail=100
+        run: cat /tmp/uvicorn.log 2>/dev/null || echo "No uvicorn log"
 
       - name: Teardown
         if: always()
-        run: APP_PORT=$APP_PORT docker compose down --volumes --remove-orphans
+        run: |
+          pkill -f "uvicorn netflix.main" 2>/dev/null || true
