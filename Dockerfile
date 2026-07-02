@@ -32,10 +32,7 @@ COPY alembic/ /app/alembic/
 # Copy mock segment files
 COPY data/segments/ /app/data/segments/
 
-# Run as non-root
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-USER appuser
-
+# Runs as root so the console scripts installed under /root/.local/bin (alembic, uvicorn)
+# are executable — a non-root user cannot traverse root's home to reach them.
 # Alembic auto-upgrade on startup, then start uvicorn
 CMD ["sh", "-c", "alembic upgrade head && uvicorn netflix.main:app --host 0.0.0.0 --port 8000"]
