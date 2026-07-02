@@ -68,9 +68,9 @@ def test_manifest_content_type(client):
     r = client.get(f"/api/v1/titles/{title['title_id']}/manifest")
     assert r.status_code == 200
     content_type = r.headers.get("content-type", "")
-    assert (
-        "xml" in content_type.lower() or "dash" in content_type.lower()
-    ), f"Expected XML/DASH content-type, got: {content_type}"
+    assert "xml" in content_type.lower() or "dash" in content_type.lower(), (
+        f"Expected XML/DASH content-type, got: {content_type}"
+    )
 
 
 def test_manifest_unknown_title(client):

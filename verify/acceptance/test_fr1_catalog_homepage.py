@@ -91,9 +91,9 @@ def test_continue_watching_after_heartbeat(client):
     cw = homepage2["continue_watching"]
 
     watched_ids = {item["title_id"] for item in cw}
-    assert (
-        title["title_id"] in watched_ids
-    ), f"Expected {title['title_id']} in continue-watching after heartbeat"
+    assert title["title_id"] in watched_ids, (
+        f"Expected {title['title_id']} in continue-watching after heartbeat"
+    )
 
     # The position should be at least the heartbeat value.
     watched_item = next(item for item in cw if item["title_id"] == title["title_id"])
