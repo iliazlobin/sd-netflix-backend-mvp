@@ -1,0 +1,50 @@
+# Netflix MVP — CI
+# Runs unit tests and verifies the Docker build on every PR to main.
+
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  DATABASE_URL: postgresql+asyncpg://netflix:netflix@localhost:5432/netflix
+  POSTGRES_USER: netflix
+  POSTGRES_PASSWORD: netflix
+  POSTGRES_DB: netflix
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: netflix
+          POSTGRES_PASSWORD: netflix
+          POSTGRES_DB: netflix
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready -U netflix
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install project with dev extras
+        run: uv sync --extra dev
+
+      - name: Run migrations
+        run: uv run alembic upgrade head
+
+      - name: Run unit tests
+        run: uv run pytest tests/ -q -v

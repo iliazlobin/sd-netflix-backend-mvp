@@ -38,6 +38,7 @@ class ProfileResponse(BaseModel):
     """Response body for profile endpoints."""
 
     profile_id: uuid.UUID
+    account_id: uuid.UUID
     name: str
     avatar_url: str | None
     is_kids: bool

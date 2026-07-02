@@ -26,6 +26,7 @@ class AccountService:
         account = Account(email=data.email)
         self._session.add(account)
         await self._session.flush()
+        await self._session.commit()
         return AccountResponse(
             account_id=account.account_id,
             email=account.email,

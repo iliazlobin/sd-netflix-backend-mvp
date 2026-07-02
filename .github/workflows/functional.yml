@@ -1,0 +1,47 @@
+# Netflix MVP — Functional tests
+# Builds the full compose stack, runs migrations, and executes acceptance tests.
+# Runs on every push to main.
+
+name: functional
+
+on:
+  push:
+    branches: [main]
+
+env:
+  APP_PORT: 8050
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test deps
+        run: uv pip install --system httpx pytest
+
+      - name: Build and start stack
+        run: APP_PORT=$APP_PORT docker compose up -d --build
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:$APP_PORT/healthz && break
+            echo "Attempt $i/30 — waiting..."
+            sleep 2
+          done
+
+      - name: Run acceptance tests
+        run: API_BASE_URL=http://localhost:$APP_PORT uv run --with httpx --with pytest python -m pytest verify/acceptance -q -v
+
+      - name: Collect logs on failure
+        if: failure()
+        run: docker compose logs app --tail=100
+
+      - name: Teardown
+        if: always()
+        run: APP_PORT=$APP_PORT docker compose down --volumes --remove-orphans

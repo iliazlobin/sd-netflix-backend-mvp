@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 revision = "001_initial"
 down_revision = None
@@ -67,7 +68,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "fts_vector",
-            sa.TSVECTOR(),
+            TSVECTOR(),
             sa.Computed(
                 "to_tsvector('english', coalesce(title, '') || ' ' || coalesce(synopsis, ''))",
                 persisted=True,
@@ -89,7 +90,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column(
             "fts_vector",
-            sa.TSVECTOR(),
+            TSVECTOR(),
             sa.Computed(
                 "to_tsvector('english', coalesce(name, ''))",
                 persisted=True,
@@ -121,7 +122,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column(
             "fts_vector",
-            sa.TSVECTOR(),
+            TSVECTOR(),
             sa.Computed(
                 "to_tsvector('english', coalesce(name, ''))",
                 persisted=True,

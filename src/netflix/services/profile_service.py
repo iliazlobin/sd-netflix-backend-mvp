@@ -38,12 +38,14 @@ class ProfileService:
             )
             self._session.add(profile)
             await self._session.flush()
+            await self._session.commit()
         except IntegrityError:
             await self._session.rollback()
             raise ValueError("Profile name already exists in this account") from None
 
         return ProfileResponse(
             profile_id=profile.profile_id,
+            account_id=profile.account_id,
             name=profile.name,
             avatar_url=profile.avatar_url,
             is_kids=profile.is_kids,
@@ -63,6 +65,7 @@ class ProfileService:
         return [
             ProfileResponse(
                 profile_id=p.profile_id,
+                account_id=p.account_id,
                 name=p.name,
                 avatar_url=p.avatar_url,
                 is_kids=p.is_kids,
@@ -78,6 +81,7 @@ class ProfileService:
             return None
         return ProfileResponse(
             profile_id=profile.profile_id,
+            account_id=profile.account_id,
             name=profile.name,
             avatar_url=profile.avatar_url,
             is_kids=profile.is_kids,
@@ -101,12 +105,14 @@ class ProfileService:
 
         try:
             await self._session.flush()
+            await self._session.commit()
         except IntegrityError:
             await self._session.rollback()
             raise ValueError("Profile name already exists in this account") from None
 
         return ProfileResponse(
             profile_id=profile.profile_id,
+            account_id=profile.account_id,
             name=profile.name,
             avatar_url=profile.avatar_url,
             is_kids=profile.is_kids,
@@ -130,4 +136,5 @@ class ProfileService:
         )
         await self._session.delete(profile)
         await self._session.flush()
+        await self._session.commit()
         return True

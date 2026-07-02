@@ -57,6 +57,8 @@ class PlaybackService:
         # Debounced WatchHistory insert
         await self._maybe_insert_watch_history(data.profile_id, data.title_id)
 
+        await self._session.commit()
+
         return HeartbeatResponse(
             profile_id=data.profile_id,
             title_id=data.title_id,
@@ -96,3 +98,4 @@ class PlaybackService:
             insert_stmt,
             {"profile_id": profile_id, "title_id": title_id},
         )
+        await self._session.commit()

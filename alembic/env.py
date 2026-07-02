@@ -43,7 +43,13 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' (async) mode."""
+    import os
+
     configuration = config.get_section(config.config_ini_section, {})
+    # Allow DATABASE_URL env var to override the hardcoded value in alembic.ini
+    # (required for CI + local testing outside Docker Compose).
+    if db_url := os.environ.get("DATABASE_URL"):
+        configuration["sqlalchemy.url"] = db_url
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
