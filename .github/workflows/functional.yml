@@ -21,6 +21,8 @@ env:
   POSTGRES_USER: netflix
   POSTGRES_PASSWORD: netflix
   POSTGRES_DB: netflix
+  # Mock segment files live at the repo root; default /app/data/segments only exists in Docker.
+  MOCK_SEGMENTS_DIR: ${{ github.workspace }}/data/segments
 
 jobs:
   acceptance:
