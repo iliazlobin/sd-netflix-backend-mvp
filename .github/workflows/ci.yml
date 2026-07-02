@@ -6,6 +6,10 @@ name: ci
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 13 * * *"
 
 env:
   PYTHON_VERSION: "3.12"
@@ -28,7 +32,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready -U netflix
+          --health-cmd="pg_isready -U netflix"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5

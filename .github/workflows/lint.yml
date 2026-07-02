@@ -6,6 +6,10 @@ name: lint
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 13 * * *"
 
 env:
   PYTHON_VERSION: "3.12"
@@ -16,12 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/ruff-action@v3
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install ruff
-        run: uv tool install ruff
+          version: "0.15.20"
 
       - name: ruff check
         run: ruff check src/ tests/ verify/
