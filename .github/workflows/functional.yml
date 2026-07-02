@@ -1,7 +1,8 @@
 # Netflix MVP — Functional tests
 # Uses GitHub Actions Postgres service, runs migrations, starts uvicorn,
 # and executes acceptance tests. No Docker Compose needed in CI.
-# Runs on every push to main.
+# App start + healthcheck + tests are consolidated in ONE step to avoid
+# nohup/orphan-process issues between GHA steps.
 
 name: functional
 
@@ -56,34 +57,45 @@ jobs:
       - name: Run migrations (including seed data)
         run: uv run alembic upgrade head
 
-      - name: Start app in background
+      - name: Start app, wait for health, run acceptance tests
         run: |
-          nohup env PYTHONPATH=src uv run uvicorn netflix.main:app \
+          set -e
+          # Start uvicorn in background within this step's shell
+          PYTHONPATH=src uv run uvicorn netflix.main:app \
             --host 0.0.0.0 --port 8000 \
             --log-level info > /tmp/uvicorn.log 2>&1 &
-          APP_PID=$!
-          echo "APP_PID=$APP_PID"
+          UVICORN_PID=$!
+          echo "uvicorn PID=$UVICORN_PID"
 
-      - name: Wait for app health
-        run: |
+          # Wait for health
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8000/healthz > /dev/null 2>&1; then
               echo "App is healthy after $((i * 2)) seconds"
-              exit 0
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "App failed to become healthy after 60 seconds"
+              cat /tmp/uvicorn.log
+              kill $UVICORN_PID 2>/dev/null || true
+              exit 1
             fi
             echo "Attempt $i/30 — waiting..."
             sleep 2
           done
-          echo "App failed to become healthy after 60 seconds"
-          cat /tmp/uvicorn.log
-          exit 1
 
-      - name: Run acceptance tests
-        run: API_BASE_URL=http://localhost:8000 uv run pytest verify/acceptance -q -v
+          # Run acceptance tests
+          API_BASE_URL=http://localhost:8000 uv run pytest verify/acceptance -q -v
+
+          # Cleanup
+          kill $UVICORN_PID 2>/dev/null || true
 
       - name: Collect logs on failure
         if: failure()
-        run: cat /tmp/uvicorn.log 2>/dev/null || echo "No uvicorn log"
+        run: |
+          cat /tmp/uvicorn.log 2>/dev/null || echo "No uvicorn log"
+          echo "=== pytest output ==="
+          # The test output went to stdout in the previous step,
+          # but let's also check for any leftover logs
 
       - name: Teardown
         if: always()
