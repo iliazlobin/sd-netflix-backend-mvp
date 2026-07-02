@@ -18,7 +18,8 @@ WORKDIR /app
 # Python tuning
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH=/root/.local/bin:$PATH
+    PATH=/root/.local/bin:$PATH \
+    PYTHONPATH=/app/src
 
 # Copy installed packages from builder
 COPY --from=builder /root/.local /root/.local

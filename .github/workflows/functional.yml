@@ -21,11 +21,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install test deps
-        run: uv pip install --system httpx pytest
-
       - name: Build and start stack
-        run: APP_PORT=$APP_PORT docker compose up -d --build
+        run: |
+          cp .env.example .env
+          APP_PORT=$APP_PORT docker compose up -d --build
 
       - name: Wait for health
         run: |
